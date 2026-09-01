@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accueil Kässbohrer VTC</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <!-- Loader -->
+  <div id="loading-screen">
+    <img src="assets/logo.png" alt="Kässbohrer" class="loading-logo">
+    <div class="loading-text">KÄSSBOHRER</div>
+    <div class="loading-step" id="loading-step">Initialisation...</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="loading-percent" id="loading-percent">0%</div>
+  </div>
+
+  <header>
+    <div class="wrap nav-row">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo">Kässbohrer</a>
+      <button class="burger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav>
+        <ul>
+        <li><a href="index.html" class="active">Accueil</a></li>
+        <li><a href="apropos.html">A propos</a></li>
+        <li><a href="calendrier.html">Calendrier</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="hazard"></div>
+
+<section class="hero">
+  <div class="road-container">
+    <img src="assets/img/truck-icon.png" alt="Camion Kässbohrer" class="moving-truck">
+  </div>
+  <div class="wrap">
+    <span class="plate">CONVOI KÄSSBOHRER</span>
+    <h1>On roule sous<br>les couleurs <span>rouge & blanc</span></h1>
+    <p>Convoi virtuel ETS2 / TruckersMP porté par la marque Kässbohrer. Remorques, routes et coéquipiers — tout le monde peut monter à bord.</p>
+    </div>
+  </div>
+</section>
+
+  <section class="stat-strip">
+    <div class="wrap grid grid-4">
+      <div><div class="num" id="stat-membres">0</div><div class="label">Chauffeurs actifs</div></div>
+      <div><div class="num" id="stat-trajets">0</div><div class="label">Trajets réalisés</div></div>
+      <div><div class="num" id="stat-km">0</div><div class="label">Km parcourus</div></div>
+      <div><div class="num" id="stat-evenements">0</div><div class="label">Événements / an</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Le convoi</div>
+        <h2>Pourquoi Kässbohrer</h2>
+        <p class="lead">Une identité simple, reconnaissable sur la route : bâches rouges, essieux blancs, et un convoi qui roule groupé.</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="num">01</div>
+          <h3>Convois réguliers</h3>
+          <p>Départs organisés chaque semaine, tous niveaux bienvenus.</p>
+        </div>
+        <div class="card">
+          <div class="num">02</div>
+          <h3>Communauté active</h3>
+          <p>Un Discord vivant pour trouver un binôme ou suivre les trajets en direct.</p>
+        </div>
+        <div class="card">
+          <div class="num">03</div>
+          <h3>Classement du mois</h3>
+          <p>Km parcourus, ponctualité, respect du code de la route en jeu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div>
+        <div class="brand" style="margin-bottom:12px;"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo" style="height:24px;">Kässbohrer</div>
+        <p style="max-width:260px;font-size:14px;">Convoi virtuel ETS2 / TruckersMP roulant sous les couleurs Kässbohrer.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="apropos.html">A propos</a></li>
+            <li><a href="calendrier.html">Calendrier</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Communauté</h4>
+          <ul>
+            <li><a href="https://discord.gg/sawpqAs7PE" target="_blank">Discord</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="copy">© 2026 Kässbohrer FRANCE VTC — projet communautaire non affilié au constructeur Kässbohrer Fahrzeugwerke. ❤️ Créer avec amour par <a href="https://discord.com/users/1252736157285093397" target="_blank" style="color:#888;text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#e2b435'" onmouseout="this.style.color='#888'">@BRATONY</a></div>
+  </footer>
+  
+  <script src="assets/nav.js"></script>
+
+  <!-- Script du loader -->
+  <script>
+    (function() {
+      const loader = document.getElementById('loading-screen');
+      const stepEl = document.getElementById('loading-step');
+      const percentEl = document.getElementById('loading-percent');
+      const fillEl = document.getElementById('progress-fill');
+
+      if (sessionStorage.getItem('loaderShown')) {
+        loader.classList.add('hidden');
+        return;
+      }
+
+      const steps = [
+        "Chargement des données...",
+        "Préparation de la route...",
+        "Vérification des équipements...",
+        "Mise en marche du moteur...",
+        "Démarrage du convoi..."
+      ];
+
+      const totalDuration = 1300;
+      let currentStep = 0;
+      let startTime = null;
+
+      function updateLoader(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / totalDuration, 1);
+        const percent = Math.round(progress * 100);
+        
+        fillEl.style.width = progress * 100 + '%';
+        percentEl.textContent = percent + '%';
+        
+        const stepIndex = Math.min(Math.floor(progress * steps.length), steps.length - 1);
+        if (stepIndex !== currentStep) {
+          currentStep = stepIndex;
+          stepEl.textContent = steps[currentStep];
+          stepEl.style.animation = 'none';
+          stepEl.offsetHeight;
+          stepEl.style.animation = 'stepFade .5s ease';
+        }
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateLoader);
+        } else {
+          setTimeout(() => {
+            loader.classList.add('hidden');
+            sessionStorage.setItem('loaderShown', 'true');
+          }, 200);
+        }
+      }
+
+      window.addEventListener('load', function() {
+        requestAnimationFrame(updateLoader);
+      });
+    })();
+  </script>
+
+  <!-- Script des stats -->
+  <script>
+    const STATS_API_URL = "https://caviar-gatherer-matriarch.ngrok-free.dev/api/stats";
+    
+    async function chargerStats() {
+        try {
+            const url = STATS_API_URL + (STATS_API_URL.includes('?') ? '&' : '?') + 'ngrok-skip-browser-warning=true';
+            const res = await fetch(url, { cache: 'no-store', headers: { 'ngrok-skip-browser-warning': 'true' } });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const stats = await res.json();
+            
+            document.getElementById('stat-membres').textContent = (stats.chauffeurs || 0).toLocaleString('fr-FR');
+            document.getElementById('stat-trajets').textContent = (stats.trajets || 0).toLocaleString('fr-FR');
+            document.getElementById('stat-km').textContent = (stats.km || 0).toLocaleString('fr-FR');
+            document.getElementById('stat-evenements').textContent = (stats.evenements || 0).toLocaleString('fr-FR');
+        } catch (err) {
+            console.warn('[stats] Échec chargement /api/stats', err);
+        }
+    }
+    
+    chargerStats();
+  </script>
+</body>
+</html>

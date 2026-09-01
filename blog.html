@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — Kässbohrer VTC</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* ===== STYLES SPÉCIFIQUES AU BLOG ===== */
+  .blog-hero {
+    background: var(--black);
+    color: var(--white);
+    padding: 60px 0;
+    text-align: center;
+  }
+  .blog-hero h1 {
+    font-size: clamp(32px, 5vw, 48px);
+    margin-bottom: 10px;
+  }
+  .blog-hero p {
+    color: var(--gray-mid);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .blog-card {
+    background: var(--white);
+    border: 1px solid var(--gray-mid);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .blog-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+  .blog-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+  }
+  .blog-card-content {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .blog-card-date {
+    font-size: 12px;
+    color: var(--gray-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .blog-card-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--black);
+  }
+  .blog-card-excerpt {
+    font-size: 14px;
+    color: var(--gray-text);
+    margin-bottom: 16px;
+    flex: 1;
+  }
+  .blog-card-link {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: var(--red);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color .2s;
+  }
+  .blog-card-link:hover {
+    color: var(--red-dark);
+  }
+
+  @media (max-width: 860px) {
+    .blog-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .blog-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <!-- Header identique aux autres pages, avec lien Blog ajouté -->
+  <header>
+    <div class="wrap nav-row">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo">Kässbohrer</a>
+      <button class="burger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav>
+        <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="apropos.html">A propos</a></li>
+        <li><a href="calendrier.html">Calendrier</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="blog.html" class="active">Blog</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="hazard"></div>
+
+  <!-- Hero du blog -->
+  <section class="blog-hero">
+    <div class="wrap">
+      <h1>Le blog du convoi</h1>
+      <p>Actualités, événements, conseils de conduite et coulisses de la Kässbohrer VTC.</p>
+    </div>
+  </section>
+
+  <!-- Grille des articles -->
+  <section>
+    <div class="wrap">
+      <div class="blog-grid">
+        
+        <!-- Article 1 -->
+        <article class="blog-card">
+          <img src="https://placehold.co/600x360/D2141A/FFFFFF?text=Convoi+du+week-end" alt="Convoi du week-end">
+          <div class="blog-card-content">
+            <div class="blog-card-date">12 juin 2026</div>
+            <h3 class="blog-card-title">Convoi du week-end : retour en images</h3>
+            <p class="blog-card-excerpt">Retrouvez les meilleurs moments de notre convoi de samedi, avec plus de 30 camions et 400 km parcourus ensemble.</p>
+            <a href="#" class="blog-card-link">Lire l'article →</a>
+          </div>
+        </article>
+
+        <!-- Article 2 -->
+        <article class="blog-card">
+          <img src="https://placehold.co/600x360/161616/FFFFFF?text=Recrutement" alt="Recrutement">
+          <div class="blog-card-content">
+            <div class="blog-card-date">5 juin 2026</div>
+            <h3 class="blog-card-title">On recrute ! Rejoignez l'équipe</h3>
+            <p class="blog-card-excerpt">Vous aimez rouler en convoi ? Nous recherchons des chauffeurs motivés, débutants ou confirmés. Rejoignez-nous sur Discord.</p>
+            <a href="#" class="blog-card-link">Lire l'article →</a>
+          </div>
+        </article>
+
+        <!-- Article 3 -->
+        <article class="blog-card">
+          <img src="https://placehold.co/600x360/2DD4BF/FFFFFF?text=Mise+à+jour" alt="Mise à jour">
+          <div class="blog-card-content">
+            <div class="blog-card-date">28 mai 2026</div>
+            <h3 class="blog-card-title">Nouvelle mise à jour du bot Discord</h3>
+            <p class="blog-card-excerpt">Le bot a été amélioré : nouveaux rôles automatiques, meilleure gestion des événements et intégration Milevox.</p>
+            <a href="#" class="blog-card-link">Lire l'article →</a>
+          </div>
+        </article>
+
+        <!-- Article 4 -->
+        <article class="blog-card">
+          <img src="https://placehold.co/600x360/4A4A4A/FFFFFF?text=Conseils" alt="Conseils">
+          <div class="blog-card-content">
+            <div class="blog-card-date">20 mai 2026</div>
+            <h3 class="blog-card-title">5 conseils pour un convoi parfait</h3>
+            <p class="blog-card-excerpt">Distances de sécurité, communication, coordination... Nos meilleurs conseils pour rouler en convoi sans stress.</p>
+            <a href="#" class="blog-card-link">Lire l'article →</a>
+          </div>
+        </article>
+
+        <!-- Article 5 -->
+        <article class="blog-card">
+          <img src="https://placehold.co/600x360/D2141A/FFFFFF?text=Événement" alt="Événement">
+          <div class="blog-card-content">
+            <div class="blog-card-date">12 mai 2026</div>
+            <h3 class="blog-card-title">Événement spécial : course de côte</h3>
+            <p class="blog-card-excerpt">Le 25 juin, participez à notre course de côte sur le col du Brenner ! Inscriptions ouvertes dès maintenant.</p>
+            <a href="#" class="blog-card-link">Lire l'article →</a>
+          </div>
+        </article>
+
+        <!-- Article 6 -->
+        <article class="blog-card">
+          <img src="https://placehold.co/600x360/161616/FFFFFF?text=Histoire" alt="Histoire">
+          <div class="blog-card-content">
+            <div class="blog-card-date">3 mai 2026</div>
+            <h3 class="blog-card-title">Les origines de la Kässbohrer VTC</h3>
+            <p class="blog-card-excerpt">Comment un petit groupe de passionnés est devenu une grande famille de chauffeurs virtuels.</p>
+            <a href="#" class="blog-card-link">Lire l'article →</a>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer identique aux autres pages -->
+  <footer>
+    <div class="wrap">
+      <div>
+        <div class="brand" style="margin-bottom:12px;"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo" style="height:24px;">Kässbohrer</div>
+        <p style="max-width:260px;font-size:14px;">Convoi virtuel ETS2 / TruckersMP roulant sous les couleurs Kässbohrer.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="apropos.html">A propos</a></li>
+            <li><a href="calendrier.html">Calendrier</a></li>
+            <li><a href="blog.html">Blog</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Communauté</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="copy">© 2026 Kässbohrer Convoi — projet communautaire non affilié au constructeur Kässbohrer Fahrzeugwerke.</div>
+  </footer>
+  <script src="assets/nav.js"></script>
+</body>
+</html>

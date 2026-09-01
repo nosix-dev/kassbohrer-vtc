@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galerie Kässbohrer VTC</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* ===== FILTRES ===== */
+  .gallery-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  .filter-btn {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 20px;
+    border: 2px solid var(--red);
+    background: transparent;
+    color: var(--black);
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .filter-btn:hover {
+    background: var(--red);
+    color: var(--white);
+  }
+  .filter-btn.active {
+    background: var(--red);
+    color: var(--white);
+  }
+
+  /* ===== GRILLE GALERIE ===== */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+  }
+  .gallery-item {
+    position: relative;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--gray-light);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .3s ease;
+  }
+  .gallery-item:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+  .gallery-item:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Étiquette catégorie */
+  .gallery-tag {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    pointer-events: none;
+  }
+
+  @media (max-width: 860px) {
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .gallery-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Message si aucune image */
+  .no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: var(--gray-text);
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav-row">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo">Kässbohrer</a>
+      <button class="burger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav>
+        <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="apropos.html">A propos</a></li>
+        <li><a href="calendrier.html">Calendrier</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="hazard"></div>
+
+  <section style="padding-top:56px;">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">En images</div>
+        <h2>Galerie</h2>
+        <p class="lead">Retrouvez nos plus beaux moments de convoi. Utilisez les filtres pour explorer les catégories.</p>
+      </div>
+
+      <!-- FILTRES -->
+      <div class="gallery-filters" id="gallery-filters">
+        <button class="filter-btn active" data-filter="all">Tout</button>
+        <button class="filter-btn" data-filter="convoi">Convois</button>
+        <button class="filter-btn" data-filter="event">Événements</button>
+        <button class="filter-btn" data-filter="screenshot">Screenshots</button>
+        <button class="filter-btn" data-filter="membre">Membres</button>
+      </div>
+
+      <!-- GRILLE DE PHOTOS (TOUT EST DÉJÀ REMPLI !) -->
+      <div class="gallery-grid" id="gallery-grid">
+        
+        <!-- CONVOIS (Rouge) -->
+        <div class="gallery-item" data-category="convoi">
+          <img src="assets/img/convoi1.jpg" alt="Convoi 1">
+          <span class="gallery-tag">Convoi</span>
+        </div>
+        <div class="gallery-item" data-category="convoi">
+          <img src="assets/img/convoi2.jpg" alt="Convoi 2">
+          <span class="gallery-tag">Convoi</span>
+        </div>
+        <div class="gallery-item" data-category="convoi">
+          <img src="https://placehold.co/600x400/D2141A/FFFFFF?text=Convoi+3" alt="Convoi 3">
+          <span class="gallery-tag">Convoi</span>
+        </div>
+
+        <!-- ÉVÉNEMENTS (Noir) -->
+        <div class="gallery-item" data-category="event">
+          <img src="https://placehold.co/600x400/161616/FFFFFF?text=Event+1" alt="Événement 1">
+          <span class="gallery-tag">Événement</span>
+        </div>
+        <div class="gallery-item" data-category="event">
+          <img src="https://placehold.co/600x400/161616/FFFFFF?text=Event+2" alt="Événement 2">
+          <span class="gallery-tag">Événement</span>
+        </div>
+
+        <!-- SCREENSHOTS (Gris) -->
+        <div class="gallery-item" data-category="screenshot">
+          <img src="https://placehold.co/600x400/4A4A4A/FFFFFF?text=Screenshot+1" alt="Screenshot 1">
+          <span class="gallery-tag">Screenshot</span>
+        </div>
+        <div class="gallery-item" data-category="screenshot">
+          <img src="https://placehold.co/600x400/4A4A4A/FFFFFF?text=Screenshot+2" alt="Screenshot 2">
+          <span class="gallery-tag">Screenshot</span>
+        </div>
+
+        <!-- MEMBRES (Vert) -->
+        <div class="gallery-item" data-category="membre">
+          <img src="https://placehold.co/600x400/2DD4BF/FFFFFF?text=Membre+1" alt="Membre 1">
+          <span class="gallery-tag">Membre</span>
+        </div>
+        <div class="gallery-item" data-category="membre">
+          <img src="https://placehold.co/600x400/2DD4BF/FFFFFF?text=Membre+2" alt="Membre 2">
+          <span class="gallery-tag">Membre</span>
+        </div>
+
+        <!-- Message si aucun résultat -->
+        <div class="no-results" id="no-results">Aucune photo dans cette catégorie.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div>
+        <div class="brand" style="margin-bottom:12px;"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo" style="height:24px;">Kässbohrer</div>
+        <p style="max-width:260px;font-size:14px;">Convoi virtuel ETS2 / TruckersMP roulant sous les couleurs Kässbohrer.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="apropos.html">A propos</a></li>
+            <li><a href="equipe.html">Équipe</a></li>
+            <li><a href="calendrier.html">Calendrier</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Communauté</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="classement.html">Classement</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="copy">© 2026 Kässbohrer Convoi — projet communautaire non affilié au constructeur Kässbohrer Fahrzeugwerke.</div>
+  </footer>
+  <script src="assets/nav.js"></script>
+
+  <!-- SCRIPT DE FILTRAGE -->
+  <script>
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const items = document.querySelectorAll('.gallery-item');
+    const noResults = document.getElementById('no-results');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filterValue = btn.getAttribute('data-filter');
+        let visibleCount = 0;
+
+        items.forEach(item => {
+          const category = item.getAttribute('data-category');
+          if (filterValue === 'all' || category === filterValue) {
+            item.style.display = 'block';
+            visibleCount++;
+          } else {
+            item.style.display = 'none';
+          }
+        });
+
+        if (visibleCount === 0) {
+          noResults.style.display = 'block';
+        } else {
+          noResults.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

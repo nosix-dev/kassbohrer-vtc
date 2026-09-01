@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>À propos Kässbohrer VTC</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* ====== STYLES SPÉCIFIQUES À LA PAGE ====== */
+  .apropos-hero {
+    position: relative;
+    background: var(--black);
+    color: var(--white);
+    overflow: hidden;
+    padding: 120px 0 80px;
+    text-align: center;
+  }
+  .apropos-hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(210,20,26,0.3) 0%, transparent 60%);
+    animation: rotateBg 20s linear infinite;
+  }
+  @keyframes rotateBg {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .apropos-hero .logo-watermark {
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 300px;
+    height: 300px;
+    opacity: 0.05;
+    pointer-events: none;
+  }
+  .apropos-hero h1 {
+    font-size: clamp(40px, 6vw, 70px);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .apropos-hero p {
+    font-size: 18px;
+    max-width: 700px;
+    margin: 0 auto;
+    color: var(--gray-mid);
+  }
+
+  .values-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 40px;
+  }
+  .value-card {
+    background: var(--white);
+    border: 1px solid var(--gray-mid);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    transition: transform .3s, box-shadow .3s;
+  }
+  .value-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+  }
+  .value-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--red);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 20px;
+  }
+  .value-card h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .value-card p {
+    color: var(--gray-text);
+    font-size: 14px;
+  }
+
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .team-member {
+    text-align: center;
+    background: var(--gray-light);
+    border-radius: 12px;
+    padding: 24px 16px;
+    transition: background .3s;
+    cursor: pointer;
+  }
+  .team-member:hover {
+    background: var(--white);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  }
+
+  .team-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--red);
+    margin: 0 auto 15px;
+    display: block;
+  }
+
+  .team-member h4 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    margin: 0 0 5px;
+  }
+  .team-member p {
+    font-size: 13px;
+    color: var(--gray-text);
+    margin: 0;
+  }
+  
+  .team-member .role-badge {
+    display: inline-block;
+    background: var(--red);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .cta-section {
+    background: var(--red);
+    color: var(--white);
+    text-align: center;
+    padding: 80px 20px;
+    margin-top: 60px;
+  }
+  .cta-section h2 {
+    font-size: clamp(30px, 4vw, 50px);
+    margin-bottom: 15px;
+  }
+  .cta-section a {
+    display: inline-block;
+    background: var(--white);
+    color: var(--red);
+    padding: 16px 32px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    font-size: 16px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    margin-top: 20px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .cta-section a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  /* Modal pour les stats */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal {
+    background: #1e1e2f;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 450px;
+    width: 90%;
+    border: 1px solid #e2b435;
+    position: relative;
+    color: #fff;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.8rem;
+    cursor: pointer;
+  }
+  .modal h2 {
+    margin-top: 0;
+    color: #e2b435;
+  }
+  .modal .stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+  }
+  .modal .stat-item:last-child {
+    border-bottom: none;
+  }
+  .modal .label {
+    color: #aaa;
+  }
+  .modal .value {
+    font-weight: bold;
+  }
+  .modal .not-found {
+    color: #ff6b6b;
+    text-align: center;
+  }
+
+  @media (max-width: 860px) {
+    .values-grid, .team-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .values-grid, .team-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav-row">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo">Kässbohrer</a>
+      <button class="burger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav>
+        <ul>
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="apropos.html" class="active">A propos</a></li>
+        <li><a href="calendrier.html">Calendrier</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="hazard"></div>
+
+  <section class="apropos-hero">
+    <div class="wrap">
+      <h1>À propos de nous</h1>
+      <p>Découvrez notre histoire, nos valeurs et les passionnés qui font vivre la Kässbohrer VTC.</p>
+    </div>
+    <img src="assets/logo.png" alt="" class="logo-watermark">
+  </section>
+
+  <section style="background:var(--gray-light); padding:80px 0;">
+    <div class="wrap">
+      <div class="section-head" style="text-align:center;">
+        <div class="eyebrow">Ce qui nous anime</div>
+        <h2>Nos valeurs</h2>
+      </div>
+      <div class="values-grid">
+        <div class="value-card">
+          <div class="value-icon">🚛</div>
+          <h3>Passion</h3>
+          <p>Rouler, découvrir et partager notre amour pour les camions et la simulation.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🤝</div>
+          <h3>Entraide</h3>
+          <p>Un esprit familial où chacun trouve sa place et peut progresser à son rythme.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🏆</div>
+          <h3>Fair-play</h3>
+          <p>Le respect des règles et des autres chauffeurs est au cœur de notre communauté.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head" style="text-align:center;">
+        <div class="eyebrow">Les visages</div>
+        <h2>Notre équipe</h2>
+        <p class="lead" style="margin:10px auto 0;">Cliquez sur un membre pour voir ses statistiques Milevox.</p>
+      </div>
+      <div class="team-grid" id="team-container">
+        <p style="grid-column: 1/-1; text-align: center; color: var(--gray-text);">Chargement de l'équipe...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal pour les stats -->
+  <div id="statsModal" class="modal-overlay">
+    <div class="modal">
+      <button class="close-btn" id="closeModalBtn">&times;</button>
+      <h2 id="modalTitle">Statistiques Milevox</h2>
+      <div id="modalContent">
+        <!-- contenu dynamique -->
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <div>
+        <div class="brand" style="margin-bottom:12px;"><img src="assets/logo.png" alt="Logo Kässbohrer" class="brand-logo" style="height:24px;">Kässbohrer</div>
+        <p style="max-width:260px;font-size:14px;">Convoi virtuel ETS2 / SCS convoi roulant sous les couleurs Kässbohrer.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="apropos.html">À propos</a></li>
+            <li><a href="calendrier.html">Calendrier</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Communauté</h4>
+          <ul>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="copy">© 2026 Kässbohrer FRANCE VTC — projet communautaire non affilié au constructeur Kässbohrer Fahrzeugwerke. ❤️ Créer avec amour par <a href="https://discord.com/users/1252736157285093397" target="_blank" style="color:#888;text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#e2b435'" onmouseout="this.style.color='#888'">@BRATONY</a></div>
+  </footer>
+  
+  <script src="assets/nav.js"></script>
+
+  <script>
+    const TEAM_API_URL = "https://caviar-gatherer-matriarch.ngrok-free.dev/api/team";
+    const MEMBER_API_BASE = "https://caviar-gatherer-matriarch.ngrok-free.dev/api/member";
+
+    const ROLE_LABELS = {
+      patron: "Patron",
+      chauffeurs: "Chauffeur",
+      chauffeurs_essai: "Chauffeur à l'essai"
+    };
+
+    const teamContainer = document.getElementById('team-container');
+
+    async function chargerEquipe() {
+        try {
+            const url = TEAM_API_URL + (TEAM_API_URL.includes('?') ? '&' : '?') + 'ngrok-skip-browser-warning=true';
+            const res = await fetch(url, { cache: 'no-store', headers: { 'ngrok-skip-browser-warning': 'true' } });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            
+            teamContainer.innerHTML = '';
+
+            for (const [roleKey, members] of Object.entries(data)) {
+                if (!Array.isArray(members) || members.length === 0) continue;
+                const roleLabel = ROLE_LABELS[roleKey] || "Membre";
+
+                members.forEach(member => {
+                    const card = document.createElement('div');
+                    card.className = 'team-member';
+                    const avatarUrl = member.avatar || 'assets/logo.png';
+
+                    card.innerHTML = `
+                        <img src="${avatarUrl}" class="team-avatar" alt="${member.pseudo}">
+                        <h4>${member.pseudo}</h4>
+                        <span class="role-badge">${roleLabel}</span>
+                        <p style="margin-top: 8px; font-size: 12px; color: #888;">Ancienneté : ${member.anciennete || 'N/A'}</p>
+                    `;
+                    
+                    card.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        ouvrirModal(member.id, member.pseudo);
+                    });
+                    teamContainer.appendChild(card);
+                });
+            }
+
+            if (teamContainer.children.length === 0) {
+                teamContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--gray-text);">Aucun membre trouvé.</p>';
+            }
+
+        } catch (err) {
+            console.warn('[équipe] Échec chargement /api/team', err);
+            teamContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--gray-text);">Impossible de charger l\'équipe pour le moment.</p>';
+        }
+    }
+
+    async function ouvrirModal(discordId, pseudoDiscord) {
+        const modal = document.getElementById('statsModal');
+        const content = document.getElementById('modalContent');
+        const title = document.getElementById('modalTitle');
+
+        content.innerHTML = '<p style="text-align:center;">Chargement des statistiques...</p>';
+        modal.classList.add('active');
+
+        try {
+            const url = `${MEMBER_API_BASE}/${discordId}?ngrok-skip-browser-warning=true`;
+            const res = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+            if (!res.ok) {
+                if (res.status === 404) {
+                    content.innerHTML = `<p class="not-found">❌ Ce membre n'a pas été lié à un compte Milevox. <br> <span style="font-size:0.9rem;color:#aaa;">(Seul le staff peut faire le lien via la commande Discord <code>/milevox-lien</code>)</span></p>`;
+                } else {
+                    content.innerHTML = `<p class="not-found">❌ Erreur lors de la récupération des données.</p>`;
+                }
+                return;
+            }
+            const stats = await res.json();
+            title.textContent = `Statistiques de ${stats.username}`;
+            content.innerHTML = `
+                <div class="stat-item"><span class="label">Niveau</span><span class="value">${stats.level || 'N/A'}</span></div>
+                <div class="stat-item"><span class="label">Kilomètres totaux</span><span class="value">${Math.round(stats.total_km || 0).toLocaleString('fr-FR')} km</span></div>
+                <div class="stat-item"><span class="label">Livraisons</span><span class="value">${stats.total_deliveries || 0}</span></div>
+                <div class="stat-item"><span class="label">Livraisons parfaites</span><span class="value">${stats.perfect_deliveries || 0}</span></div>
+                <div class="stat-item"><span class="label">Éco-conduite (moy.)</span><span class="value">${Math.round(stats.avg_eco_score || 0)}%</span></div>
+                <div class="stat-item"><span class="label">Rôle</span><span class="value">${stats.role || 'Membre'}</span></div>
+            `;
+        } catch (err) {
+            console.error(err);
+            content.innerHTML = `<p class="not-found">❌ Erreur réseau ou serveur.</p>`;
+        }
+    }
+
+    document.getElementById('closeModalBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('statsModal').classList.remove('active');
+    });
+    document.getElementById('statsModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            document.getElementById('statsModal').classList.remove('active');
+        }
+    });
+
+    chargerEquipe();
+  </script>
+</body>
+</html>
