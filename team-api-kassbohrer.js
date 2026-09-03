@@ -146,6 +146,35 @@ async function getTeamData(client) {
   return cache;
 }
 
+// ─── FONCTIONS DE LECTURE DES DONNÉES POUR L'API ───
+function getConvoisData() {
+    if (!GUILD_ID) return [];
+    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+    const guildData = brut.guilds && brut.guilds[GUILD_ID];
+    return (guildData && guildData.convois) || [];
+}
+
+function getMeetingsData() {
+    if (!GUILD_ID) return [];
+    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+    const guildData = brut.guilds && brut.guilds[GUILD_ID];
+    return (guildData && guildData.meetings) || [];
+}
+
+function getPollsData() {
+    if (!GUILD_ID) return [];
+    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+    const guildData = brut.guilds && brut.guilds[GUILD_ID];
+    return (guildData && guildData.polls) || [];
+}
+
+function getEmbedsData() {
+    if (!GUILD_ID) return [];
+    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+    const guildData = brut.guilds && brut.guilds[GUILD_ID];
+    return (guildData && guildData.embeds) || [];
+}
+
 async function getEventsData() {
   const localEvents = [];
   if (GUILD_ID && fs.existsSync(DATA_PATH)) {
@@ -190,17 +219,14 @@ async function getStatsData() {
     }
 }
 
-// NOUVELLE FONCTION : récupérer les stats d'un membre Milevox à partir de son Discord ID
 async function getMemberStats(discordId) {
     try {
-        // Lire data.json pour obtenir le mapping
         const dataBrut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
         const guildData = dataBrut.guilds?.[GUILD_ID];
         if (!guildData || !guildData.milevoxMapping || !guildData.milevoxMapping[discordId]) {
-            return null; // pas de lien
+            return null;
         }
         const pseudo = guildData.milevoxMapping[discordId];
-        // Récupérer tous les membres Milevox
         const { members } = await milevoxApi.getMembers();
         if (!members || !Array.isArray(members)) return null;
         const member = members.find(m => m.username.toLowerCase() === pseudo.toLowerCase());
@@ -212,7 +238,7 @@ async function getMemberStats(discordId) {
 }
 
 // ───────────────────────────────────────────────
-// NGROK (inchangé)
+// NGROK
 // ───────────────────────────────────────────────
 function telechargerFichier(url, destPath, redirectsRestants = 5) {
   return new Promise((resolve, reject) => {
@@ -351,7 +377,6 @@ function startTeamApiKassbohrer(client, options = {}) {
     catch (err) { console.error("[team-api-kassbohrer] erreur /api/stats:", err); res.status(500).json({ error: "internal_error" }); }
   });
 
-  // NOUVELLE ROUTE : /api/member/:discordId
   app.get("/api/member/:discordId", async (req, res) => {
     try {
       const discordId = req.params.discordId;
@@ -362,6 +387,47 @@ function startTeamApiKassbohrer(client, options = {}) {
       res.json(memberStats);
     } catch (err) {
       console.error("[team-api-kassbohrer] erreur /api/member:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+
+  // ─── NOUVELLES ROUTES ───
+  app.get("/api/convois", async (req, res) => {
+    try {
+      const convois = getConvoisData();
+      res.json(convois);
+    } catch (err) {
+      console.error("[team-api-kassbohrer] erreur /api/convois:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+
+  app.get("/api/meetings", async (req, res) => {
+    try {
+      const meetings = getMeetingsData();
+      res.json(meetings);
+    } catch (err) {
+      console.error("[team-api-kassbohrer] erreur /api/meetings:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+
+  app.get("/api/polls", async (req, res) => {
+    try {
+      const polls = getPollsData();
+      res.json(polls);
+    } catch (err) {
+      console.error("[team-api-kassbohrer] erreur /api/polls:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+
+  app.get("/api/embeds", async (req, res) => {
+    try {
+      const embeds = getEmbedsData();
+      res.json(embeds);
+    } catch (err) {
+      console.error("[team-api-kassbohrer] erreur /api/embeds:", err);
       res.status(500).json({ error: "internal_error" });
     }
   });
