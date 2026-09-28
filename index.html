@@ -45,7 +45,6 @@
     <span class="plate">CONVOI KÄSSBOHRER</span>
     <h1>On roule sous<br>les couleurs <span>rouge & blanc</span></h1>
     <p>Convoi virtuel ETS2 / TruckersMP porté par la marque Kässbohrer. Remorques, routes et coéquipiers — tout le monde peut monter à bord.</p>
-    </div>
   </div>
 </section>
 
@@ -110,7 +109,7 @@
     </div>
     <div class="copy">© 2026 Kässbohrer FRANCE VTC — projet communautaire non affilié au constructeur Kässbohrer Fahrzeugwerke. ❤️ Créer avec amour par <a href="https://discord.com/users/1252736157285093397" target="_blank" style="color:#888;text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#e2b435'" onmouseout="this.style.color='#888'">@BRATONY</a></div>
   </footer>
-  
+
   <script src="assets/nav.js"></script>
 
   <!-- Script du loader -->
@@ -143,10 +142,10 @@
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / totalDuration, 1);
         const percent = Math.round(progress * 100);
-        
+
         fillEl.style.width = progress * 100 + '%';
         percentEl.textContent = percent + '%';
-        
+
         const stepIndex = Math.min(Math.floor(progress * steps.length), steps.length - 1);
         if (stepIndex !== currentStep) {
           currentStep = stepIndex;
@@ -155,7 +154,7 @@
           stepEl.offsetHeight;
           stepEl.style.animation = 'stepFade .5s ease';
         }
-        
+
         if (progress < 1) {
           requestAnimationFrame(updateLoader);
         } else {
@@ -172,27 +171,30 @@
     })();
   </script>
 
-  <!-- Script des stats -->
+  <!-- Script des stats (Milevox via Cloudflare Pages Function) -->
   <script>
-    const STATS_API_URL = "https://caviar-gatherer-matriarch.ngrok-free.dev/api/stats";
-    
     async function chargerStats() {
-        try {
-            const url = STATS_API_URL + (STATS_API_URL.includes('?') ? '&' : '?') + 'ngrok-skip-browser-warning=true';
-            const res = await fetch(url, { cache: 'no-store', headers: { 'ngrok-skip-browser-warning': 'true' } });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const stats = await res.json();
-            
-            document.getElementById('stat-membres').textContent = (stats.chauffeurs || 0).toLocaleString('fr-FR');
-            document.getElementById('stat-trajets').textContent = (stats.trajets || 0).toLocaleString('fr-FR');
-            document.getElementById('stat-km').textContent = (stats.km || 0).toLocaleString('fr-FR');
-            document.getElementById('stat-evenements').textContent = (stats.evenements || 0).toLocaleString('fr-FR');
-        } catch (err) {
-            console.warn('[stats] Échec chargement /api/stats', err);
-        }
+      try {
+        const res = await fetch('/api/stats', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const stats = await res.json();
+        if (stats.error) throw new Error(stats.error);
+        console.log('[stats] reçu :', stats);
+
+        const set = (id, v) => {
+          document.getElementById(id).textContent = (Number(v) || 0).toLocaleString('fr-FR');
+        };
+        set('stat-membres', stats.chauffeurs);
+        set('stat-trajets', stats.trajets);
+        set('stat-km', stats.km);
+        set('stat-evenements', stats.evenements);
+      } catch (err) {
+        console.error('[stats] Échec chargement /api/stats', err);
+      }
     }
-    
+
     chargerStats();
+    setInterval(chargerStats, 60000);
   </script>
 </body>
 </html>
