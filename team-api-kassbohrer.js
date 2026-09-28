@@ -1,7 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const https = require("https");
-const { spawn, execFileSync, execFile } = require("child_process");
 const express = require("express");
 const cors = require("cors");
 
@@ -9,9 +7,6 @@ const milevoxApi = require("./milevox");
 
 const GUILD_ID = process.env.GUILD_ID_KASSBOHRER || null;
 const PORT = process.env.TEAM_API_PORT_KASSBOHRER || 26081;
-const NGROK_AUTHTOKEN = process.env.NGROK_AUTHTOKEN || null;
-const NGROK_DOMAIN = process.env.NGROK_DOMAIN_KASSBOHRER || null;
-const NGROK_API_KEY = process.env.NGROK_API_KEY || null;
 
 const DISCORD_EVENT_CHANNEL_ID = "1540511389842669648";
 
@@ -23,10 +18,6 @@ const ROLE_IDS = {
 
 const DATA_PATH = path.join(__dirname, "data.json");
 const ANNOUNCED_EVENTS_PATH = path.join(__dirname, "annonced_events.json");
-const NGROK_DIR = path.join(__dirname, "ngrok-bin");
-const NGROK_BIN = path.join(NGROK_DIR, "ngrok");
-const NGROK_TARBALL = path.join(NGROK_DIR, "ngrok.tgz");
-const NGROK_URL = "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz";
 
 const CACHE_MS = 60 * 1000;
 let membersCache = null;
@@ -256,126 +247,17 @@ async function getMemberStats(discordId) {
 }
 
 // ───────────────────────────────────────────────
-// NGROK
-// ───────────────────────────────────────────────
-function telechargerFichier(url, destPath, redirectsRestants = 5) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { "User-Agent": "team-api-script" } }, (res) => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-        if (redirectsRestants <= 0) return reject(new Error("Trop de redirections"));
-        res.resume();
-        return resolve(telechargerFichier(res.headers.location, destPath, redirectsRestants - 1));
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        return reject(new Error(`Téléchargement échoué, HTTP ${res.statusCode}`));
-      }
-      const fileStream = fs.createWriteStream(destPath);
-      res.pipe(fileStream);
-      fileStream.on("finish", () => fileStream.close(() => resolve()));
-      fileStream.on("error", reject);
-    }).on("error", reject);
-  });
-}
-
-async function assurerBinaireNgrok() {
-  if (fs.existsSync(NGROK_BIN)) return;
-  if (!fs.existsSync(NGROK_DIR)) fs.mkdirSync(NGROK_DIR, { recursive: true });
-  await telechargerFichier(NGROK_URL, NGROK_TARBALL);
-  execFileSync("tar", ["xzf", NGROK_TARBALL, "-C", NGROK_DIR]);
-  fs.chmodSync(NGROK_BIN, 0o755);
-  fs.unlinkSync(NGROK_TARBALL);
-}
-
-function tuerNgrokExistant(domaine) {
-  return new Promise((resolve) => {
-    execFile("pkill", ["-f", `ngrok.*${domaine}`], () => resolve());
-  });
-}
-
-function couperSessionCloudNgrok(domaine) {
-  return new Promise((resolve) => {
-    if (!NGROK_API_KEY) return resolve(false);
-    const optionsListe = { hostname: "api.ngrok.com", path: "/endpoints", method: "GET", headers: { Authorization: `Bearer ${NGROK_API_KEY}`, "Ngrok-Version": "2" } };
-    const reqListe = https.request(optionsListe, (res) => {
-      let body = "";
-      res.on("data", (chunk) => (body += chunk));
-      res.on("end", async () => {
-        let endpoints;
-        try { endpoints = JSON.parse(body).endpoints || []; } catch { return resolve(false); }
-        const cible = endpoints.find((e) => (e.hostport || e.url || "").includes(domaine));
-        if (!cible || !cible.tunnel_session_id) return resolve(false);
-        const optionsDelete = { hostname: "api.ngrok.com", path: `/tunnel_sessions/${cible.tunnel_session_id}/stop`, method: "POST", headers: { Authorization: `Bearer ${NGROK_API_KEY}`, "Ngrok-Version": "2" } };
-        const reqDelete = https.request(optionsDelete, (resDelete) => {
-          resDelete.on("data", () => {});
-          resDelete.on("end", () => { console.log("[team-api-kassbohrer] session distante coupée"); resolve(true); });
-        });
-        reqDelete.on("error", (err) => { console.error("[team-api-kassbohrer] erreur coupure distante :", err.message); resolve(false); });
-        reqDelete.end();
-      });
-    });
-    reqListe.on("error", (err) => { console.error("[team-api-kassbohrer] erreur listing ngrok :", err.message); resolve(false); });
-    reqListe.end();
-  });
-}
-
-let ngrokChild = null;
-
-async function ouvrirTunnelNgrok(port) {
-  if (!NGROK_AUTHTOKEN || !NGROK_DOMAIN) return console.error("[team-api-kassbohrer] NGROK config manquante.");
-  try { await assurerBinaireNgrok(); } catch (err) { return console.error("[team-api-kassbohrer] Erreur binaire ngrok:", err.message); }
-  await tuerNgrokExistant(NGROK_DOMAIN);
-  const coupureCloud = await couperSessionCloudNgrok(NGROK_DOMAIN);
-  await new Promise((r) => setTimeout(r, coupureCloud ? 2000 : 1000));
-
-  const child = spawn(NGROK_BIN, ["http", `--url=${NGROK_DOMAIN}`, String(port)], { env: { ...process.env, NGROK_AUTHTOKEN } });
-  ngrokChild = child;
-  let annonce = false;
-  const gererLigne = (buf) => {
-    const text = buf.toString();
-    console.log("[ngrok-kassbohrer]", text.trim());
-    if (!annonce && /started tunnel|client session established/i.test(text)) {
-      annonce = true;
-      console.log(`[team-api-kassbohrer] Tunnel actif : https://${NGROK_DOMAIN}/api/stats`);
-    }
-  };
-  child.stdout.on("data", gererLigne);
-  child.stderr.on("data", gererLigne);
-  child.on("exit", (code) => {
-    ngrokChild = null;
-    if (code !== 0) {
-      console.error(`[team-api-kassbohrer] ngrok arrêté (code ${code}). Relance dans 5s...`);
-      setTimeout(() => ouvrirTunnelNgrok(port), 5000);
-    }
-  });
-  child.on("error", (err) => console.error("[team-api-kassbohrer] impossible lancer ngrok:", err.message));
-}
-
-function arreterNgrokProprement() {
-  if (ngrokChild) { ngrokChild.kill("SIGTERM"); ngrokChild = null; }
-}
-let signalHandlersInstalles = false;
-function installerSignalHandlers() {
-  if (signalHandlersInstalles) return;
-  signalHandlersInstalles = true;
-  process.on("SIGINT", () => { arreterNgrokProprement(); process.exit(0); });
-  process.on("SIGTERM", () => { arreterNgrokProprement(); process.exit(0); });
-}
-
-// ───────────────────────────────────────────────
 // SERVEUR EXPRESS
 // ───────────────────────────────────────────────
 function startTeamApiKassbohrer(client, options = {}) {
   if (started) return;
   started = true;
-  installerSignalHandlers();
   clientRef = client;
   chargerAnnonces();
 
   const port = options.port || PORT;
   const app = express();
   app.use(cors({ origin: true, methods: ["GET", "OPTIONS"] }));
-  app.use((req, res, next) => { res.setHeader("ngrok-skip-browser-warning", "true"); next(); });
 
   const route = (chemin, fn) => {
     app.get(chemin, async (req, res) => {
@@ -405,9 +287,8 @@ function startTeamApiKassbohrer(client, options = {}) {
     }
   });
 
-  app.listen(port, "0.0.0.0", async () => {
+  app.listen(port, "0.0.0.0", () => {
     console.log(`[team-api-kassbohrer] écoute sur le port ${port}`);
-    await ouvrirTunnelNgrok(port);
   });
 
   setInterval(() => verifierNouveauxEvenementsMilevox(), 5 * 60 * 1000);
