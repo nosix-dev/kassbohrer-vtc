@@ -38,12 +38,15 @@ let started = false;
 let clientRef = null;
 
 let announcedEvents = new Set();
+let premierPassage = false;
 
 function chargerAnnonces() {
   try {
     if (fs.existsSync(ANNOUNCED_EVENTS_PATH)) {
       const data = JSON.parse(fs.readFileSync(ANNOUNCED_EVENTS_PATH, "utf8"));
       announcedEvents = new Set(data);
+    } else {
+      premierPassage = true;
     }
   } catch (err) {
     console.error("[team-api-kassbohrer] Erreur chargement annonces :", err.message);
@@ -58,18 +61,37 @@ function sauvegarderAnnonces() {
   }
 }
 
+function listeEvenements(reponse) {
+  if (Array.isArray(reponse)) return reponse;
+  if (reponse && Array.isArray(reponse.events)) return reponse.events;
+  return [];
+}
+
+function idEvenement(ev) {
+  return ev.id || `${ev.date}-${ev.titre}`;
+}
+
 async function verifierNouveauxEvenementsMilevox() {
   if (!clientRef || !GUILD_ID) return;
   try {
-    const events = await milevoxApi.getEvents();
-    if (!Array.isArray(events)) return;
+    const events = listeEvenements(await milevoxApi.getEvents());
+
+    // Premier lancement : on marque tout comme déjà annoncé, sans poster
+    if (premierPassage) {
+      premierPassage = false;
+      for (const ev of events) announcedEvents.add(idEvenement(ev));
+      sauvegarderAnnonces();
+      console.log(`[team-api-kassbohrer] Premier passage silencieux : ${events.length} événement(s) marqué(s).`);
+      return;
+    }
+
     const channel = clientRef.channels.cache.get(DISCORD_EVENT_CHANNEL_ID);
     if (!channel) return;
 
     for (const ev of events) {
-      const id = ev.id || `${ev.date}-${ev.titre}`;
+      const id = idEvenement(ev);
       if (announcedEvents.has(id)) continue;
-      const date = new Date(ev.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      const date = new Date(ev.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
       const titre = ev.titre || "Événement sans titre";
       const lieu = ev.lieu ? `📍 Lieu : ${ev.lieu}` : "";
       const lien = ev.lien ? `\n🔗 Plus d'infos : ${ev.lien}` : "";
@@ -114,7 +136,6 @@ async function getGuildMembers(guild) {
         membersCacheTime = Date.now();
         return members;
       })
-      .catch(err => { throw err; })
       .finally(() => { membersFetchPromise = null; });
   }
   return membersFetchPromise;
@@ -146,95 +167,92 @@ async function getTeamData(client) {
   return cache;
 }
 
-// ─── FONCTIONS DE LECTURE DES DONNÉES POUR L'API ───
-function getConvoisData() {
-    if (!GUILD_ID) return [];
+// ─── LECTURE DE data.json ───
+function lireGuildData() {
+  if (!GUILD_ID || !fs.existsSync(DATA_PATH)) return {};
+  try {
     const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
-    const guildData = brut.guilds && brut.guilds[GUILD_ID];
-    return (guildData && guildData.convois) || [];
+    return (brut.guilds && brut.guilds[GUILD_ID]) || {};
+  } catch (err) {
+    console.error("[team-api-kassbohrer] Erreur lecture data.json :", err.message);
+    return {};
+  }
 }
 
-function getMeetingsData() {
-    if (!GUILD_ID) return [];
-    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
-    const guildData = brut.guilds && brut.guilds[GUILD_ID];
-    return (guildData && guildData.meetings) || [];
-}
-
-function getPollsData() {
-    if (!GUILD_ID) return [];
-    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
-    const guildData = brut.guilds && brut.guilds[GUILD_ID];
-    return (guildData && guildData.polls) || [];
-}
-
-function getEmbedsData() {
-    if (!GUILD_ID) return [];
-    const brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
-    const guildData = brut.guilds && brut.guilds[GUILD_ID];
-    return (guildData && guildData.embeds) || [];
-}
+const getConvoisData = () => lireGuildData().convois || [];
+const getMeetingsData = () => lireGuildData().meetings || [];
+const getPollsData = () => lireGuildData().polls || [];
+const getEmbedsData = () => lireGuildData().embeds || [];
 
 async function getEventsData() {
-  const localEvents = [];
-  if (GUILD_ID && fs.existsSync(DATA_PATH)) {
-    let brut;
-    try { brut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8")); }
-    catch (err) { brut = {}; }
-    const guildData = brut.guilds && brut.guilds[GUILD_ID];
-    const evenementsLocaux = (guildData && guildData.evenements) || [];
-    localEvents.push(...evenementsLocaux.map((ev) => ({
-      id: ev.id, date: ev.date, titre: ev.titre, lieu: ev.lieu,
-      categorie: ev.categorie, lien: ev.lien || null, image: ev.image || null
-    })));
-  }
+  const evenementsLocaux = lireGuildData().evenements || [];
+  const localEvents = evenementsLocaux.map((ev) => ({
+    id: ev.id, date: ev.date, titre: ev.titre, lieu: ev.lieu,
+    categorie: ev.categorie, lien: ev.lien || null, image: ev.image || null
+  }));
 
   let milevoxEvents = [];
   try {
-    const milevoxData = await milevoxApi.getEvents().catch(err => []);
-    if (Array.isArray(milevoxData)) {
-      milevoxEvents = milevoxData.map(ev => ({
-        id: ev.id || `mvx-${Date.now()}-${Math.random()}`,
-        date: ev.date, titre: ev.titre, lieu: ev.lieu,
-        categorie: ev.categorie, lien: ev.lien || null, image: ev.image || null
-      }));
-    }
+    const milevoxData = listeEvenements(await milevoxApi.getEvents());
+    milevoxEvents = milevoxData.map((ev) => ({
+      id: idEvenement(ev),
+      date: ev.date, titre: ev.titre, lieu: ev.lieu,
+      categorie: ev.categorie, lien: ev.lien || null, image: ev.image || null
+    }));
   } catch (err) { console.error("[team-api-kassbohrer] Erreur Milevox events :", err.message); }
   return [...localEvents, ...milevoxEvents];
 }
 
+let statsLogged = false;
+
 async function getStatsData() {
-    try {
-        const milevoxInfo = await milevoxApi.getVtcInfo();
-        const vtc = milevoxInfo.vtc || milevoxInfo || {};
-        return {
-            chauffeurs: vtc.member_count || vtc.members || 0,
-            trajets: vtc.deliveries || vtc.total_deliveries || 0,
-            km: vtc.km || vtc.total_km || 0,
-            evenements: vtc.events_count || vtc.events || 0
-        };
-    } catch (err) {
-        console.error("[team-api-kassbohrer] Erreur /api/stats :", err.message);
-        return { chauffeurs: 0, trajets: 0, km: 0, evenements: 0 };
+  try {
+    const info = await milevoxApi.getVtcInfo();
+    if (!statsLogged) {
+      statsLogged = true;
+      console.log("[team-api-kassbohrer] Réponse Milevox brute :", JSON.stringify(info).slice(0, 1500));
     }
+
+    const vtc = info.vtc || info.data || info || {};
+    const pick = (...cles) => {
+      for (const c of cles) {
+        const v = vtc[c] ?? (vtc.stats && vtc.stats[c]);
+        if (v !== undefined && v !== null && !isNaN(Number(v))) return Number(v);
+      }
+      return 0;
+    };
+
+    let evenements = pick("events_count", "events", "total_events");
+    if (!evenements) {
+      try {
+        evenements = listeEvenements(await milevoxApi.getEvents()).length;
+      } catch (e) {}
+    }
+
+    return {
+      chauffeurs: pick("member_count", "members_count", "members", "total_members", "drivers"),
+      trajets: pick("total_deliveries", "deliveries_count", "deliveries", "jobs"),
+      km: pick("total_km", "total_distance", "distance", "km"),
+      evenements
+    };
+  } catch (err) {
+    console.error("[team-api-kassbohrer] Erreur /api/stats :", err.message);
+    return { chauffeurs: 0, trajets: 0, km: 0, evenements: 0 };
+  }
 }
 
 async function getMemberStats(discordId) {
-    try {
-        const dataBrut = JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
-        const guildData = dataBrut.guilds?.[GUILD_ID];
-        if (!guildData || !guildData.milevoxMapping || !guildData.milevoxMapping[discordId]) {
-            return null;
-        }
-        const pseudo = guildData.milevoxMapping[discordId];
-        const { members } = await milevoxApi.getMembers();
-        if (!members || !Array.isArray(members)) return null;
-        const member = members.find(m => m.username.toLowerCase() === pseudo.toLowerCase());
-        return member || null;
-    } catch (err) {
-        console.error("[team-api-kassbohrer] Erreur getMemberStats :", err.message);
-        return null;
-    }
+  try {
+    const guildData = lireGuildData();
+    if (!guildData.milevoxMapping || !guildData.milevoxMapping[discordId]) return null;
+    const pseudo = guildData.milevoxMapping[discordId];
+    const { members } = await milevoxApi.getMembers();
+    if (!members || !Array.isArray(members)) return null;
+    return members.find((m) => m.username.toLowerCase() === pseudo.toLowerCase()) || null;
+  } catch (err) {
+    console.error("[team-api-kassbohrer] Erreur getMemberStats :", err.message);
+    return null;
+  }
 }
 
 // ───────────────────────────────────────────────
@@ -290,7 +308,7 @@ function couperSessionCloudNgrok(domaine) {
         const optionsDelete = { hostname: "api.ngrok.com", path: `/tunnel_sessions/${cible.tunnel_session_id}/stop`, method: "POST", headers: { Authorization: `Bearer ${NGROK_API_KEY}`, "Ngrok-Version": "2" } };
         const reqDelete = https.request(optionsDelete, (resDelete) => {
           resDelete.on("data", () => {});
-          resDelete.on("end", () => { console.log(`[team-api-kassbohrer] session distante coupée`); resolve(true); });
+          resDelete.on("end", () => { console.log("[team-api-kassbohrer] session distante coupée"); resolve(true); });
         });
         reqDelete.on("error", (err) => { console.error("[team-api-kassbohrer] erreur coupure distante :", err.message); resolve(false); });
         reqDelete.end();
@@ -323,9 +341,6 @@ async function ouvrirTunnelNgrok(port) {
   };
   child.stdout.on("data", gererLigne);
   child.stderr.on("data", gererLigne);
-  let sortieRecente = "";
-  child.stdout.on("data", (b) => (sortieRecente += b.toString()));
-  child.stderr.on("data", (b) => (sortieRecente += b.toString()));
   child.on("exit", (code) => {
     ngrokChild = null;
     if (code !== 0) {
@@ -362,72 +377,30 @@ function startTeamApiKassbohrer(client, options = {}) {
   app.use(cors({ origin: true, methods: ["GET", "OPTIONS"] }));
   app.use((req, res, next) => { res.setHeader("ngrok-skip-browser-warning", "true"); next(); });
 
-  app.get("/api/team", async (req, res) => {
-    try { res.json(await getTeamData(client)); }
-    catch (err) { console.error("[team-api-kassbohrer] erreur /api/team:", err); res.status(500).json({ error: "internal_error" }); }
-  });
+  const route = (chemin, fn) => {
+    app.get(chemin, async (req, res) => {
+      try { res.json(await fn(req)); }
+      catch (err) { console.error(`[team-api-kassbohrer] erreur ${chemin}:`, err); res.status(500).json({ error: "internal_error" }); }
+    });
+  };
 
-  app.get("/api/events", async (req, res) => {
-    try { res.json(await getEventsData()); }
-    catch (err) { console.error("[team-api-kassbohrer] erreur /api/events:", err); res.status(500).json({ error: "internal_error" }); }
-  });
-
-  app.get("/api/stats", async (req, res) => {
-    try { res.json(await getStatsData()); }
-    catch (err) { console.error("[team-api-kassbohrer] erreur /api/stats:", err); res.status(500).json({ error: "internal_error" }); }
-  });
+  route("/api/team", () => getTeamData(client));
+  route("/api/events", () => getEventsData());
+  route("/api/stats", () => getStatsData());
+  route("/api/convois", () => getConvoisData());
+  route("/api/meetings", () => getMeetingsData());
+  route("/api/polls", () => getPollsData());
+  route("/api/embeds", () => getEmbedsData());
 
   app.get("/api/member/:discordId", async (req, res) => {
     try {
-      const discordId = req.params.discordId;
-      const memberStats = await getMemberStats(discordId);
+      const memberStats = await getMemberStats(req.params.discordId);
       if (!memberStats) {
         return res.status(404).json({ error: "Aucun lien Milevox pour cet utilisateur ou membre introuvable" });
       }
       res.json(memberStats);
     } catch (err) {
       console.error("[team-api-kassbohrer] erreur /api/member:", err);
-      res.status(500).json({ error: "internal_error" });
-    }
-  });
-
-  // ─── NOUVELLES ROUTES ───
-  app.get("/api/convois", async (req, res) => {
-    try {
-      const convois = getConvoisData();
-      res.json(convois);
-    } catch (err) {
-      console.error("[team-api-kassbohrer] erreur /api/convois:", err);
-      res.status(500).json({ error: "internal_error" });
-    }
-  });
-
-  app.get("/api/meetings", async (req, res) => {
-    try {
-      const meetings = getMeetingsData();
-      res.json(meetings);
-    } catch (err) {
-      console.error("[team-api-kassbohrer] erreur /api/meetings:", err);
-      res.status(500).json({ error: "internal_error" });
-    }
-  });
-
-  app.get("/api/polls", async (req, res) => {
-    try {
-      const polls = getPollsData();
-      res.json(polls);
-    } catch (err) {
-      console.error("[team-api-kassbohrer] erreur /api/polls:", err);
-      res.status(500).json({ error: "internal_error" });
-    }
-  });
-
-  app.get("/api/embeds", async (req, res) => {
-    try {
-      const embeds = getEmbedsData();
-      res.json(embeds);
-    } catch (err) {
-      console.error("[team-api-kassbohrer] erreur /api/embeds:", err);
       res.status(500).json({ error: "internal_error" });
     }
   });
