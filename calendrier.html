@@ -24,7 +24,7 @@
   .cal-dayname { font-size:10.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted,#8ea0b7); padding-left:4px; font-weight:700; }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
 
-  .cal-cell { min-height:110px; border-radius:8px; padding:10px; background:rgba(63, 63, 63, 0.315); border:1px solid rgba(255,255,255,.12); display:flex; flex-direction:column; gap:6px; transition: all .2s ease; }
+  .cal-cell { min-height:110px; border-radius:8px; padding:10px; background:rgba(63, 63, 63, 0.315); border:1px solid rgba(255,255,255,.12); display:flex; flex-direction:column; gap:6px; transition: all .2s ease; cursor: pointer; }
   .cal-cell:hover { background: rgba(155, 82, 82, 0.808); border-color: #d42d2d; box-shadow: 0 0 12px rgba(212, 45, 45, 0.3); transform: scale(1.02); }
   .cal-cell.other-month { opacity:.25; }
   .cal-cell.today { border-color:#2dd4bf; background: rgba(45,212,191,.12); box-shadow: 0 0 0 2px #2dd4bf inset, 0 0 15px rgba(45,212,191,.2); font-weight: 700; }
@@ -33,10 +33,13 @@
   .cal-daynum { font-size:13px; font-weight:700; }
   .cal-events { display:flex; flex-direction:column; gap:5px; }
   .cal-event-pill { display:block; cursor:pointer; font-size:10.5px; line-height:1.3; padding:5px 8px; border-radius:5px; background:rgba(255,255,255,.06); font-weight:600; color:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-left:3px solid var(--muted,#8ea0b7); transition:transform .15s ease; }
-  .cal-event-pill:hover { transform:translateX(2px); background:rgba(255,255,255,.12); }
+  .cal-event-pill:hover { transform:translateX(2px); }
   .cal-event-pill.open { border-left-color:#2dd4bf; background:rgba(45,212,191,.15); }
   .cal-event-pill.closed { border-left-color:#e05c4d; opacity:.7; }
+  .cal-event-pill.convoi::before { content:"🚛 "; }
   .cal-loading, .cal-error { text-align:center; padding:40px 20px; color:var(--muted,#8ea0b7); font-size:14px; }
+  .cal-error { grid-column:1/-1; padding:14px; }
+  .cal-loading { grid-column:1/-1; }
   @media (max-width:760px) { .cal-wrap { padding:16px 12px 20px; } .cal-cell { min-height:74px; padding:6px; } .cal-dayname { font-size:9px; } .cal-event-pill { font-size:9px; padding:4px 6px; } .cal-title { font-size:16px; min-width:0; } }
 
   /* Modal détails */
@@ -53,6 +56,7 @@
   .modal-lieu { color:#8ea0b7; margin:0 0 12px; font-size:14px; }
   .modal-description { color:#c9d3e0; font-size:14px; line-height:1.6; background:rgba(255,255,255,.03); padding:12px 16px; border-radius:10px; border-left:3px solid #e2b435; margin-bottom:14px; white-space:pre-wrap; }
   .modal-description.regle { border-left-color:#e05c4d; }
+  .modal-convoi-badge { margin-bottom:14px; padding:12px; background:rgba(226,180,53,.1); border-radius:10px; border-left:3px solid #e2b435; font-size:13px; color:#e2b435; }
   .modal-buttons { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
   .modal-btn { display:inline-block; padding:10px 22px; border-radius:999px; font-weight:700; font-size:14px; background:#e2b435; color:#111; text-decoration:none; transition:opacity .2s ease; }
   .modal-btn:hover { opacity:.85; }
@@ -97,22 +101,14 @@
           <div class="cal-legend">
             <span class="cal-legend-item"><span class="cal-legend-dot open"></span>Ouvert</span>
             <span class="cal-legend-item"><span class="cal-legend-dot closed"></span>Terminé</span>
+            <span class="cal-legend-item">🚛 Convoi</span>
           </div>
         </div>
-
         <div class="cal-daynames">
-          <span class="cal-dayname">Lun</span>
-          <span class="cal-dayname">Mar</span>
-          <span class="cal-dayname">Mer</span>
-          <span class="cal-dayname">Jeu</span>
-          <span class="cal-dayname">Ven</span>
-          <span class="cal-dayname">Sam</span>
-          <span class="cal-dayname">Dim</span>
+          <span class="cal-dayname">Lun</span><span class="cal-dayname">Mar</span><span class="cal-dayname">Mer</span>
+          <span class="cal-dayname">Jeu</span><span class="cal-dayname">Ven</span><span class="cal-dayname">Sam</span><span class="cal-dayname">Dim</span>
         </div>
-
-        <div class="cal-grid" id="cal-grid">
-          <div class="cal-loading">Chargement du calendrier…</div>
-        </div>
+        <div class="cal-grid" id="cal-grid"><div class="cal-loading">Chargement du calendrier…</div></div>
       </div>
     </div>
   </section>
@@ -143,117 +139,120 @@
   </footer>
   <script src="assets/nav.js"></script>
 
-  <script>
-  (function(){
-    // events.json du repo GitHub (se met à jour sans redéployer le site)
-    var EVENTS_URL = "https://raw.githubusercontent.com/nosix-dev/kassbohrer-vtc/main/events.json?t=" + Date.now();
-    // ⚠️ À modifier : ton lien d'invitation Discord
-    var DISCORD_URL = "https://discord.gg/XXXXXXX";
+<script>
+(function(){
+  var EVENTS_URL = "https://raw.githubusercontent.com/nosix-dev/kassbohrer-vtc/main/events.json?t=" + Date.now();
+  var DISCORD_URL = "https://discord.gg/XXXXXXX"; // ⚠️ à remplacer par ton lien d'invitation
+  var MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
-    var MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-    var grid = document.getElementById('cal-grid');
-    var titleEl = document.getElementById('cal-title');
-    if(!grid) return;
+  var grid = document.getElementById('cal-grid');
+  var titleEl = document.getElementById('cal-title');
+  if(!grid) return;
 
-    var aujourdhui = new Date(); aujourdhui.setHours(0,0,0,0);
-    var vueAnnee = aujourdhui.getFullYear();
-    var vueMois = aujourdhui.getMonth();
-    var parJour = {}, liste = [];
-    var charge = false;
+  var aujourdhui = new Date(); aujourdhui.setHours(0,0,0,0);
+  var vueAnnee = aujourdhui.getFullYear(), vueMois = aujourdhui.getMonth();
+  var parJour = {}, liste = [], charge = false;
 
-    function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-    function cle(d){ return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
-    function texte(v){ return Array.isArray(v) ? v.map(function(l){ return '• ' + l; }).join('\n') : (v || ''); }
-
-    // "2026-10-25" parsé en date locale (évite le décalage de fuseau)
-    function parseDate(s){
-      if(typeof s === 'string'){
-        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if(m) return new Date(+m[1], +m[2] - 1, +m[3]);
-      }
-      return new Date(s);
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+  function cle(d){ return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+  function texte(v){ return Array.isArray(v) ? v.map(function(l){ return '• ' + l; }).join('\n') : (v || ''); }
+  // Convoi = catégorie "Convoi", ou "convoi": true, ou titre qui commence par 🚛
+  function estConvoi(ev){
+    return ev.convoi === true || ev._isConvoi === true
+      || (ev.categorie && String(ev.categorie).toLowerCase() === 'convoi')
+      || (ev.titre && ev.titre.indexOf('🚛 ') === 0);
+  }
+  // "2026-10-25" lu en date locale (évite le décalage de fuseau)
+  function parseDate(s){
+    if(typeof s === 'string'){
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(m) return new Date(+m[1], +m[2] - 1, +m[3]);
     }
-    function estOuvert(ev){ return parseDate(ev.date) >= aujourdhui; }
+    return new Date(s);
+  }
+  function estOuvert(ev){ return parseDate(ev.date) >= aujourdhui; }
 
-    function indexer(events){
-      parJour = {}; liste = [];
-      events.forEach(function(ev){
-        var d = parseDate(ev.date);
-        if(isNaN(d)) return;
-        ev._i = liste.length;
-        liste.push(ev);
-        var k = cle(d);
-        (parJour[k] = parJour[k] || []).push(ev);
-      });
-    }
-
-    window.handleEventClick = function(i){
-      var ev = liste[i];
-      if(!ev) return;
-      var desc = texte(ev.description), regle = texte(ev['règlement']);
+  function indexer(events){
+    parJour = {}; liste = [];
+    events.forEach(function(ev){
       var d = parseDate(ev.date);
-      var dateFr = isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-      var overlay = document.createElement('div');
-      overlay.className = 'modal-overlay';
-      overlay.innerHTML =
-        '<div class="modal-content">'
-        + '<button class="modal-close" aria-label="Fermer">✕</button>'
-        + (ev.image ? '<img src="' + esc(ev.image) + '" class="modal-image" alt="">' : '')
-        + '<h2 class="modal-title">' + esc(ev.titre || 'Événement') + '</h2>'
-        + '<div class="modal-tags">'
-        + (ev.categorie ? '<span class="modal-tag">' + esc(ev.categorie) + '</span>' : '')
-        + (dateFr ? '<span class="modal-tag-date">📅 ' + esc(dateFr) + '</span>' : '')
-        + (ev.heure ? '<span class="modal-tag-date">🕒 ' + esc(ev.heure) + '</span>' : '')
-        + '</div>'
-        + (ev.lieu ? '<p class="modal-lieu">📍 ' + esc(ev.lieu) + '</p>' : '')
-        + (desc ? '<div class="modal-description">' + esc(desc) + '</div>' : '')
-        + (regle ? '<div class="modal-description regle"><strong>Règlement :</strong>\n' + esc(regle) + '</div>' : '')
-        + '<div class="modal-buttons">'
-        + (ev.lienHaulmp ? '<a href="' + esc(ev.lienHaulmp) + '" target="_blank" rel="noopener" class="modal-btn">🔗 HaulMP</a>' : '')
-        + (ev.lien ? '<a href="' + esc(ev.lien) + '" target="_blank" rel="noopener" class="modal-btn">🔗 TrucksBook</a>' : '')
-        + '<a href="' + DISCORD_URL + '" target="_blank" rel="noopener" class="modal-btn modal-btn-discord">💬 Discord</a>'
-        + '</div></div>';
-      document.body.appendChild(overlay);
-      function fermer(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
-      function onKey(e){ if(e.key === 'Escape') fermer(); }
-      document.addEventListener('keydown', onKey);
-      overlay.addEventListener('click', function(e){
-        if(e.target === overlay || e.target.classList.contains('modal-close')) fermer();
-      });
-    };
+      if(isNaN(d)) return;
+      ev._i = liste.length;
+      liste.push(ev);
+      var k = cle(d);
+      (parJour[k] = parJour[k] || []).push(ev);
+    });
+  }
 
-    function rendre(){
-      titleEl.textContent = MOIS[vueMois] + ' ' + vueAnnee;
-      var decalage = (new Date(vueAnnee, vueMois, 1).getDay() + 6) % 7;
-      var html = '';
-      for(var i = 0; i < 42; i++){
-        var jour = new Date(vueAnnee, vueMois, 1 - decalage + i);
-        var evs = parJour[cle(jour)] || [];
-        var c = 'cal-cell';
-        if(jour.getMonth() !== vueMois) c += ' other-month';
-        if(jour.getTime() === aujourdhui.getTime()) c += ' today';
-        if(evs.some(estOuvert)) c += ' has-open';
-        else if(evs.length) c += ' has-closed';
-        var pills = evs.length ? '<div class="cal-events">' + evs.map(function(ev){
-          var k = 'cal-event-pill ' + (estOuvert(ev) ? 'open' : 'closed');
-          return '<span class="' + k + '" title="Voir les détails" onclick="handleEventClick(' + ev._i + ')">' + esc(ev.titre || 'Événement') + '</span>';
-        }).join('') + '</div>' : '';
-        html += '<div class="' + c + '"><span class="cal-daynum">' + jour.getDate() + '</span>' + pills + '</div>';
-      }
-      if(!charge) html = '<div class="cal-error" style="grid-column:1/-1;">Événements indisponibles pour le moment — le calendrier s\'affiche quand même.</div>' + html;
-      grid.innerHTML = html;
+  window.handleEventClick = function(i){
+    var ev = liste[i];
+    if(!ev) return;
+    var desc = texte(ev.description), regle = texte(ev['règlement']);
+    var d = parseDate(ev.date);
+    var dateFr = isNaN(d) ? '' : d.toLocaleDateString('fr-FR');
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML =
+      '<div class="modal-content">'
+      + '<button class="modal-close" aria-label="Fermer">✕</button>'
+      + (ev.image ? '<img src="' + esc(ev.image) + '" class="modal-image" alt="">' : '')
+      + '<h2 class="modal-title">' + esc(ev.titre || 'Événement') + '</h2>'
+      + '<div class="modal-tags">'
+      + (ev.categorie ? '<span class="modal-tag">' + esc(ev.categorie) + '</span>' : '')
+      + (dateFr ? '<span class="modal-tag-date">📅 ' + esc(dateFr) + '</span>' : '')
+      + (ev.heure ? '<span class="modal-tag-date">🕒 ' + esc(ev.heure) + '</span>' : '')
+      + '</div>'
+      + (ev.lieu ? '<p class="modal-lieu">📍 ' + esc(ev.lieu) + '</p>' : '')
+      + (desc ? '<div class="modal-description">' + esc(desc) + '</div>' : '')
+      + (regle ? '<div class="modal-description regle"><strong>Règlement :</strong>\n' + esc(regle) + '</div>' : '')
+      + (estConvoi(ev) ? '<div class="modal-convoi-badge">🚛 Convoi organisé par Kässbohrer</div>' : '')
+      + '<div class="modal-buttons">'
+      + (ev.lienHaulmp ? '<a href="' + esc(ev.lienHaulmp) + '" target="_blank" rel="noopener" class="modal-btn">🔗 HaulMP</a>' : '')
+      + (ev.lien ? '<a href="' + esc(ev.lien) + '" target="_blank" rel="noopener" class="modal-btn">🔗 TrucksBook</a>' : '')
+      + '<a href="' + DISCORD_URL + '" target="_blank" rel="noopener" class="modal-btn modal-btn-discord">💬 Discord</a>'
+      + '</div></div>';
+    document.body.appendChild(overlay);
+    function fermer(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e){ if(e.key === 'Escape') fermer(); }
+    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('click', function(e){
+      if(e.target === overlay || e.target.classList.contains('modal-close')) fermer();
+    });
+  };
+
+  function rendre(){
+    titleEl.textContent = MOIS[vueMois] + ' ' + vueAnnee;
+    var decalage = (new Date(vueAnnee, vueMois, 1).getDay() + 6) % 7;
+    var html = charge ? '' : '<div class="cal-error">Événements indisponibles pour le moment — le calendrier s\'affiche quand même.</div>';
+    for(var i = 0; i < 42; i++){
+      var jour = new Date(vueAnnee, vueMois, 1 - decalage + i);
+      var evs = parJour[cle(jour)] || [];
+      var c = 'cal-cell';
+      if(jour.getMonth() !== vueMois) c += ' other-month';
+      if(jour.getTime() === aujourdhui.getTime()) c += ' today';
+      if(evs.some(estOuvert)) c += ' has-open';
+      else if(evs.length) c += ' has-closed';
+      var pills = evs.length ? '<div class="cal-events">' + evs.map(function(ev){
+        var k = 'cal-event-pill ' + (estOuvert(ev) ? 'open' : 'closed') + (estConvoi(ev) ? ' convoi' : '');
+        return '<span class="' + k + '" title="Voir les détails" onclick="handleEventClick(' + ev._i + ')">' + esc(ev.titre || 'Événement') + '</span>';
+      }).join('') + '</div>' : '';
+      html += '<div class="' + c + '"><span class="cal-daynum">' + jour.getDate() + '</span>' + pills + '</div>';
     }
+    grid.innerHTML = html;
+  }
 
-    document.getElementById('cal-prev').addEventListener('click', function(){ if(--vueMois < 0){ vueMois = 11; vueAnnee--; } rendre(); });
-    document.getElementById('cal-next').addEventListener('click', function(){ if(++vueMois > 11){ vueMois = 0; vueAnnee++; } rendre(); });
-    document.getElementById('cal-today').addEventListener('click', function(){ vueAnnee = aujourdhui.getFullYear(); vueMois = aujourdhui.getMonth(); rendre(); });
+  document.getElementById('cal-prev').addEventListener('click', function(){ if(--vueMois < 0){ vueMois = 11; vueAnnee--; } rendre(); });
+  document.getElementById('cal-next').addEventListener('click', function(){ if(++vueMois > 11){ vueMois = 0; vueAnnee++; } rendre(); });
+  document.getElementById('cal-today').addEventListener('click', function(){ vueAnnee = aujourdhui.getFullYear(); vueMois = aujourdhui.getMonth(); rendre(); });
 
-    fetch(EVENTS_URL, { cache: 'no-store' })
-      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function(events){ indexer(Array.isArray(events) ? events : []); charge = true; })
-      .catch(function(err){ console.warn('[calendrier]', err.message); indexer([]); charge = false; })
-      .then(rendre);
-  })();
-  </script>
+  fetch(EVENTS_URL, { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(events){ indexer(Array.isArray(events) ? events : []); charge = true; })
+    .catch(function(err){ console.warn('[calendrier]', err.message); indexer([]); charge = false; })
+    .then(rendre);
+})();
+</script>
 </body>
 </html>
