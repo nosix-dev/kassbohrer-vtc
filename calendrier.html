@@ -141,7 +141,14 @@
 
 <script>
 (function(){
-  var EVENTS_URL = "https://raw.githubusercontent.com/nosix-dev/kassbohrer-vtc/main/events.json?t=" + Date.now();
+  // 1) events.json du site (même repo, redéployé automatiquement par Cloudflare Pages)
+  // 2) en secours : le fichier raw GitHub
+  var EVENTS_URLS = [
+    "/events.json?t=" + Date.now(),
+    "https://raw.githubusercontent.com/nosix-dev/kassbohrer-vtc/main/events.json?t=" + Date.now(),
+    "https://cdn.jsdelivr.net/gh/nosix-dev/kassbohrer-vtc@main/events.json?t=" + Date.now()
+  ];
+  var erreurs = [];
   var DISCORD_URL = "https://discord.gg/XXXXXXX"; // ⚠️ à remplacer par ton lien d'invitation
   var MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
@@ -225,7 +232,8 @@
   function rendre(){
     titleEl.textContent = MOIS[vueMois] + ' ' + vueAnnee;
     var decalage = (new Date(vueAnnee, vueMois, 1).getDay() + 6) % 7;
-    var html = charge ? '' : '<div class="cal-error">Événements indisponibles pour le moment — le calendrier s\'affiche quand même.</div>';
+    var html = charge ? '' : '<div class="cal-error">Événements indisponibles pour le moment — le calendrier s\'affiche quand même.'
+      + (erreurs.length ? '<br><small style="opacity:.7;word-break:break-all;">' + esc(erreurs.join(' | ')) + '</small>' : '') + '</div>';
     for(var i = 0; i < 42; i++){
       var jour = new Date(vueAnnee, vueMois, 1 - decalage + i);
       var evs = parJour[cle(jour)] || [];
@@ -247,8 +255,18 @@
   document.getElementById('cal-next').addEventListener('click', function(){ if(++vueMois > 11){ vueMois = 0; vueAnnee++; } rendre(); });
   document.getElementById('cal-today').addEventListener('click', function(){ vueAnnee = aujourdhui.getFullYear(); vueMois = aujourdhui.getMonth(); rendre(); });
 
-  fetch(EVENTS_URL, { cache: 'no-store' })
-    .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  function chargerJson(i){
+    return fetch(EVENTS_URLS[i], { cache: 'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .catch(function(err){
+        console.warn('[calendrier] échec ' + EVENTS_URLS[i], err.message);
+        erreurs.push(EVENTS_URLS[i].split('?')[0] + ' → ' + err.message);
+        if(i + 1 < EVENTS_URLS.length) return chargerJson(i + 1);
+        throw err;
+      });
+  }
+
+  chargerJson(0)
     .then(function(events){ indexer(Array.isArray(events) ? events : []); charge = true; })
     .catch(function(err){ console.warn('[calendrier]', err.message); indexer([]); charge = false; })
     .then(rendre);
