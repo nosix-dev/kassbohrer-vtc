@@ -23,8 +23,8 @@
   .cal-daynames { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:8px; }
   .cal-dayname { font-size:10.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted,#8ea0b7); padding-left:4px; font-weight:700; }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
-  
-  .cal-cell { min-height:110px; border-radius:8px; padding:10px; background:rgba(63, 63, 63, 0.315); border:1px solid rgba(255,255,255,.12); display:flex; flex-direction:column; gap:6px; transition: all .2s ease; cursor: pointer; }
+
+  .cal-cell { min-height:110px; border-radius:8px; padding:10px; background:rgba(63, 63, 63, 0.315); border:1px solid rgba(255,255,255,.12); display:flex; flex-direction:column; gap:6px; transition: all .2s ease; }
   .cal-cell:hover { background: rgba(155, 82, 82, 0.808); border-color: #d42d2d; box-shadow: 0 0 12px rgba(212, 45, 45, 0.3); transform: scale(1.02); }
   .cal-cell.other-month { opacity:.25; }
   .cal-cell.today { border-color:#2dd4bf; background: rgba(45,212,191,.12); box-shadow: 0 0 0 2px #2dd4bf inset, 0 0 15px rgba(45,212,191,.2); font-weight: 700; }
@@ -32,12 +32,31 @@
   .cal-cell.has-closed { background:rgba(224,92,77,.06); border-color:rgba(224,92,77,.3); }
   .cal-daynum { font-size:13px; font-weight:700; }
   .cal-events { display:flex; flex-direction:column; gap:5px; }
-  .cal-event-pill { display:block; font-size:10.5px; line-height:1.3; padding:5px 8px; border-radius:5px; background:rgba(255,255,255,.06); font-weight:600; color:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-left:3px solid var(--muted,#8ea0b7); }
-  a.cal-event-pill:hover { transform:translateX(2px); }
+  .cal-event-pill { display:block; cursor:pointer; font-size:10.5px; line-height:1.3; padding:5px 8px; border-radius:5px; background:rgba(255,255,255,.06); font-weight:600; color:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-left:3px solid var(--muted,#8ea0b7); transition:transform .15s ease; }
+  .cal-event-pill:hover { transform:translateX(2px); background:rgba(255,255,255,.12); }
   .cal-event-pill.open { border-left-color:#2dd4bf; background:rgba(45,212,191,.15); }
   .cal-event-pill.closed { border-left-color:#e05c4d; opacity:.7; }
   .cal-loading, .cal-error { text-align:center; padding:40px 20px; color:var(--muted,#8ea0b7); font-size:14px; }
   @media (max-width:760px) { .cal-wrap { padding:16px 12px 20px; } .cal-cell { min-height:74px; padding:6px; } .cal-dayname { font-size:9px; } .cal-event-pill { font-size:9px; padding:4px 6px; } .cal-title { font-size:16px; min-width:0; } }
+
+  /* Modal détails */
+  .modal-overlay { position:fixed; inset:0; background:rgba(5,6,8,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-content { background:#0f1115; border:1px solid rgba(255,255,255,.1); border-radius:14px; max-width:520px; width:100%; padding:28px; box-shadow:0 24px 60px rgba(0,0,0,.6); max-height:90vh; overflow-y:auto; }
+  .modal-close { float:right; background:none; border:none; color:#8ea0b7; font-size:22px; cursor:pointer; padding:4px 8px; border-radius:6px; }
+  .modal-close:hover { background:rgba(255,255,255,.06); }
+  .modal-image { width:100%; border-radius:10px; margin-bottom:16px; max-height:200px; object-fit:cover; }
+  .modal-title { font-weight:800; font-size:22px; color:#fff; margin:0 0 10px; clear:both; }
+  .modal-tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .modal-tag, .modal-tag-date { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+  .modal-tag { background:rgba(226,180,53,.15); color:#e2b435; }
+  .modal-tag-date { background:rgba(255,255,255,.06); color:#c9d3e0; }
+  .modal-lieu { color:#8ea0b7; margin:0 0 12px; font-size:14px; }
+  .modal-description { color:#c9d3e0; font-size:14px; line-height:1.6; background:rgba(255,255,255,.03); padding:12px 16px; border-radius:10px; border-left:3px solid #e2b435; margin-bottom:14px; white-space:pre-wrap; }
+  .modal-description.regle { border-left-color:#e05c4d; }
+  .modal-buttons { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+  .modal-btn { display:inline-block; padding:10px 22px; border-radius:999px; font-weight:700; font-size:14px; background:#e2b435; color:#111; text-decoration:none; transition:opacity .2s ease; }
+  .modal-btn:hover { opacity:.85; }
+  .modal-btn-discord { background:#5865F2; color:#fff; }
 </style>
 </head>
 <body>
@@ -64,7 +83,7 @@
       <div class="section-head">
         <div class="eyebrow">Agenda</div>
         <h2>Calendrier</h2>
-        <p class="lead">Les prochains convois organisés par l'équipe. Rendez-vous sur le Discord pour l'itinéraire complet.</p>
+        <p class="lead">Les prochains convois organisés par l'équipe. Clique sur un événement pour voir les détails.</p>
       </div>
 
       <div class="cal-wrap">
@@ -126,86 +145,114 @@
 
   <script>
   (function(){
-    const EVENTS_API_URL = "https://caviar-gatherer-matriarch.ngrok-free.dev/api/events";
-    const grid = document.getElementById('cal-grid');
-    const titleEl = document.getElementById('cal-title');
-    const btnPrev = document.getElementById('cal-prev');
-    const btnNext = document.getElementById('cal-next');
-    const btnToday = document.getElementById('cal-today');
+    // ⚠️ À modifier : lien RAW de ton events.json sur GitHub
+    var EVENTS_URL = "https://raw.githubusercontent.com/nosix-dev/Kassbohrer/main/events.json?t=" + Date.now();
+    // ⚠️ À modifier : ton lien d'invitation Discord
+    var DISCORD_URL = "https://discord.gg/XXXXXXX";
+
+    var MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    var grid = document.getElementById('cal-grid');
+    var titleEl = document.getElementById('cal-title');
     if(!grid) return;
-    const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-    const aujourdhui = new Date();
-    aujourdhui.setHours(0,0,0,0);
-    let vueAnnee = aujourdhui.getFullYear();
-    let vueMois = aujourdhui.getMonth();
-    let eventsParJour = {};
-    let evenementsCharges = false;
 
-    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c])); }
-    function cleJour(d){ return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+    var aujourdhui = new Date(); aujourdhui.setHours(0,0,0,0);
+    var vueAnnee = aujourdhui.getFullYear();
+    var vueMois = aujourdhui.getMonth();
+    var parJour = {}, liste = [];
+    var charge = false;
 
-    function indexerEvenements(events){
-      eventsParJour = {};
+    function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function cle(d){ return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+    function texte(v){ return Array.isArray(v) ? v.map(function(l){ return '• ' + l; }).join('\n') : (v || ''); }
+
+    // "2026-10-25" parsé en date locale (évite le décalage de fuseau)
+    function parseDate(s){
+      if(typeof s === 'string'){
+        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(m) return new Date(+m[1], +m[2] - 1, +m[3]);
+      }
+      return new Date(s);
+    }
+    function estOuvert(ev){ return parseDate(ev.date) >= aujourdhui; }
+
+    function indexer(events){
+      parJour = {}; liste = [];
       events.forEach(function(ev){
-        const d = new Date(ev.date);
+        var d = parseDate(ev.date);
         if(isNaN(d)) return;
-        const cle = cleJour(d);
-        if(!eventsParJour[cle]) eventsParJour[cle] = [];
-        eventsParJour[cle].push(ev);
+        ev._i = liste.length;
+        liste.push(ev);
+        var k = cle(d);
+        (parJour[k] = parJour[k] || []).push(ev);
       });
     }
 
-    async function chargerEvenements(){
-      try{
-        const url = EVENTS_API_URL + (EVENTS_API_URL.includes('?') ? '&' : '?') + 'ngrok-skip-browser-warning=true';
-        const res = await fetch(url, { cache: 'no-store', headers: { 'ngrok-skip-browser-warning': 'true' } });
-        if(!res.ok) throw new Error('HTTP ' + res.status);
-        const events = await res.json();
-        indexerEvenements(Array.isArray(events) ? events : []);
-        evenementsCharges = true;
-      }catch(err){
-        console.warn('[calendrier] Échec chargement /api/events', err);
-        evenementsCharges = false;
-      }
-      rendreCalendrier();
-    }
+    window.handleEventClick = function(i){
+      var ev = liste[i];
+      if(!ev) return;
+      var desc = texte(ev.description), regle = texte(ev['règlement']);
+      var d = parseDate(ev.date);
+      var dateFr = isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML =
+        '<div class="modal-content">'
+        + '<button class="modal-close" aria-label="Fermer">✕</button>'
+        + (ev.image ? '<img src="' + esc(ev.image) + '" class="modal-image" alt="">' : '')
+        + '<h2 class="modal-title">' + esc(ev.titre || 'Événement') + '</h2>'
+        + '<div class="modal-tags">'
+        + (ev.categorie ? '<span class="modal-tag">' + esc(ev.categorie) + '</span>' : '')
+        + (dateFr ? '<span class="modal-tag-date">📅 ' + esc(dateFr) + '</span>' : '')
+        + (ev.heure ? '<span class="modal-tag-date">🕒 ' + esc(ev.heure) + '</span>' : '')
+        + '</div>'
+        + (ev.lieu ? '<p class="modal-lieu">📍 ' + esc(ev.lieu) + '</p>' : '')
+        + (desc ? '<div class="modal-description">' + esc(desc) + '</div>' : '')
+        + (regle ? '<div class="modal-description regle"><strong>Règlement :</strong>\n' + esc(regle) + '</div>' : '')
+        + '<div class="modal-buttons">'
+        + (ev.lienHaulmp ? '<a href="' + esc(ev.lienHaulmp) + '" target="_blank" rel="noopener" class="modal-btn">🔗 HaulMP</a>' : '')
+        + (ev.lien ? '<a href="' + esc(ev.lien) + '" target="_blank" rel="noopener" class="modal-btn">🔗 TrucksBook</a>' : '')
+        + '<a href="' + DISCORD_URL + '" target="_blank" rel="noopener" class="modal-btn modal-btn-discord">💬 Discord</a>'
+        + '</div></div>';
+      document.body.appendChild(overlay);
+      function fermer(){ overlay.remove(); document.removeEventListener('keydown', onKey); }
+      function onKey(e){ if(e.key === 'Escape') fermer(); }
+      document.addEventListener('keydown', onKey);
+      overlay.addEventListener('click', function(e){
+        if(e.target === overlay || e.target.classList.contains('modal-close')) fermer();
+      });
+    };
 
-    function rendreCalendrier(){
+    function rendre(){
       titleEl.textContent = MOIS[vueMois] + ' ' + vueAnnee;
-      const premierDuMois = new Date(vueAnnee, vueMois, 1);
-      const decalage = (premierDuMois.getDay() + 6) % 7;
-      const debutGrille = new Date(vueAnnee, vueMois, 1 - decalage);
-      let html = '';
-      for(let i = 0; i < 42; i++){
-        const jourDate = new Date(debutGrille.getFullYear(), debutGrille.getMonth(), debutGrille.getDate() + i);
-        const estMoisCourant = jourDate.getMonth() === vueMois;
-        const estAujourdhui = jourDate.getTime() === aujourdhui.getTime();
-        const evenementsJour = eventsParJour[cleJour(jourDate)] || [];
-        let classesCell = 'cal-cell';
-        if(!estMoisCourant) classesCell += ' other-month';
-        if(estAujourdhui) classesCell += ' today';
-        if(evenementsJour.some(ev => new Date(ev.date) >= aujourdhui)) classesCell += ' has-open';
-        else if(evenementsJour.length) classesCell += ' has-closed';
-        let pillsHtml = '';
-        if(evenementsJour.length){
-          pillsHtml = '<div class="cal-events">' + evenementsJour.map(function(ev){
-            const ouvert = new Date(ev.date) >= aujourdhui;
-            const classe = 'cal-event-pill ' + (ouvert ? 'open' : 'closed');
-            const titre = escapeHtml(ev.titre || 'Événement');
-            if(ev.lien) return '<a class="' + classe + '" href="' + escapeHtml(ev.lien) + '" target="_blank" rel="noopener" title="' + titre + '">' + titre + '</a>';
-            return '<span class="' + classe + '" title="' + titre + '">' + titre + '</span>';
-          }).join('') + '</div>';
-        }
-        html += '<div class="' + classesCell + '">' + '<span class="cal-daynum">' + jourDate.getDate() + '</span>' + pillsHtml + '</div>';
+      var decalage = (new Date(vueAnnee, vueMois, 1).getDay() + 6) % 7;
+      var html = '';
+      for(var i = 0; i < 42; i++){
+        var jour = new Date(vueAnnee, vueMois, 1 - decalage + i);
+        var evs = parJour[cle(jour)] || [];
+        var c = 'cal-cell';
+        if(jour.getMonth() !== vueMois) c += ' other-month';
+        if(jour.getTime() === aujourdhui.getTime()) c += ' today';
+        if(evs.some(estOuvert)) c += ' has-open';
+        else if(evs.length) c += ' has-closed';
+        var pills = evs.length ? '<div class="cal-events">' + evs.map(function(ev){
+          var k = 'cal-event-pill ' + (estOuvert(ev) ? 'open' : 'closed');
+          return '<span class="' + k + '" title="Voir les détails" onclick="handleEventClick(' + ev._i + ')">' + esc(ev.titre || 'Événement') + '</span>';
+        }).join('') + '</div>' : '';
+        html += '<div class="' + c + '"><span class="cal-daynum">' + jour.getDate() + '</span>' + pills + '</div>';
       }
-      if(!evenementsCharges) grid.innerHTML = '<div class="cal-error" style="grid-column:1/-1;">Événements indisponibles pour le moment — le calendrier s\'affiche quand même.</div>' + html;
-      else grid.innerHTML = html;
+      if(!charge) html = '<div class="cal-error" style="grid-column:1/-1;">Événements indisponibles pour le moment — le calendrier s\'affiche quand même.</div>' + html;
+      grid.innerHTML = html;
     }
 
-    btnPrev.addEventListener('click', function(){ vueMois--; if(vueMois < 0){ vueMois = 11; vueAnnee--; } rendreCalendrier(); });
-    btnNext.addEventListener('click', function(){ vueMois++; if(vueMois > 11){ vueMois = 0; vueAnnee++; } rendreCalendrier(); });
-    btnToday.addEventListener('click', function(){ vueAnnee = aujourdhui.getFullYear(); vueMois = aujourdhui.getMonth(); rendreCalendrier(); });
-    chargerEvenements();
+    document.getElementById('cal-prev').addEventListener('click', function(){ if(--vueMois < 0){ vueMois = 11; vueAnnee--; } rendre(); });
+    document.getElementById('cal-next').addEventListener('click', function(){ if(++vueMois > 11){ vueMois = 0; vueAnnee++; } rendre(); });
+    document.getElementById('cal-today').addEventListener('click', function(){ vueAnnee = aujourdhui.getFullYear(); vueMois = aujourdhui.getMonth(); rendre(); });
+
+    fetch(EVENTS_URL, { cache: 'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(events){ indexer(Array.isArray(events) ? events : []); charge = true; })
+      .catch(function(err){ console.warn('[calendrier]', err.message); indexer([]); charge = false; })
+      .then(rendre);
   })();
   </script>
 </body>
