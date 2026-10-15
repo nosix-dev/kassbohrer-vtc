@@ -1,0 +1,32 @@
+[
+  {
+    "titre": "Convoi Kässbohrer — Calais → Duisburg",
+    "date": "2026-10-25",
+    "heure": "20:30",
+    "categorie": "Convoi",
+    "lieu": "Calais (point de départ) → Duisburg",
+    "description": [
+      "Départ à 20h30, rendez-vous 20h00 sur le Discord",
+      "Serveur : Simulation 1",
+      "Remorque : au choix, pas de limite"
+    ],
+    "règlement": [
+      "Respect du code de la route",
+      "CB obligatoire",
+      "Pas de dépassement du lead"
+    ],
+    "image": "",
+    "lien": "",
+    "lienHaulmp": ""
+  },
+  {
+    "titre": "Convoi du 1er novembre",
+    "date": "2026-11-01",
+    "heure": "21:00",
+    "categorie": "Convoi",
+    "lieu": "Paris → Lyon",
+    "description": "Petit convoi tranquille, tout le monde est le bienvenu.",
+    "lien": "https://trucksbook.eu/",
+    "lienHaulmp": ""
+  }
+]
